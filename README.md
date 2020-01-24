@@ -1,7 +1,7 @@
 
 cppFiles contains the custom code for this paper.
 
-src contains the modified LAMMPS code for run the simulation.
+src contains the modified LAMMPS code for run the simulation.(also can found in awsem github(same with 2016 version))
 
 scripts are used to do the simulation and analyze the results.
 
