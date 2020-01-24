@@ -1,0 +1,68 @@
+# 3d protein simulation
+
+units real
+
+timestep 5
+
+dimension	3
+
+#boundary s s s
+boundary p p p
+
+neighbor	10 bin
+neigh_modify	delay 5
+
+atom_modify sort 0 0.0
+
+special_bonds fene
+
+atom_style	peptide
+
+bond_style harmonic
+
+pair_style vexcluded 2 3.5 3.5
+
+read_restart slow.tw*
+
+pair_coeff * * 0.0
+pair_coeff 1 1 20.0 3.5 4.5
+pair_coeff 1 4 20.0 3.5 4.5
+pair_coeff 4 4 20.0 3.5 4.5
+pair_coeff 3 3 20.0 3.5 3.5
+velocity        all create 300.0 2349852
+
+
+include  ./group_definitions.txt
+
+fix               1 all nve
+fix               2 all langevin 350 350 10000.0 714028
+fix               4 alpha_carbons backbone beta_atoms oxygens fix_backbone_coeff.data tau.seq
+
+fix               qbias alpha_carbons qbias fix_qbias_coeff.data
+fix_modify        qbias energy no
+variable          biasinge equal f_qbias
+compute     qw alpha_carbons qwolynes rnative.dat 2 0.15
+variable    qw equal c_qw
+compute     rg alpha_carbons gyration
+variable    rg equal c_rg
+compute     qo alpha_carbons qonuchic cutoff 9.5 nativecoords.dat 1.2
+variable    qo equal c_qo
+compute     tc beta_atoms totalcontacts 6.5 2
+variable    tc equal c_tc
+variable    step equal step
+variable    E_P equal pe
+variable E_chain  equal f_4[1]
+variable E_Pot      equal v_E_P-v_E_chain
+variable    E_elect equal ecoul
+fix         wham all print 1000 "${step}        ${qw} ${rg} ${qo} ${tc} ${E_P} ${E_Pot} ${E_elect}" file wham.dat screen no title "# timestep qw       rg           qo       tc     $energy        $energy_nochain $ecoul"
+
+thermo          1000
+thermo_style custom step etotal pe ecoul epair edihed temp
+#thermo_style custom step ecoul
+dump            1 all atom 1000 dump.lammpstrj
+
+dump_modify     1 sort id
+#minimize 1.0e-6 1.0e-8 1000 10000
+reset_timestep  0
+restart 10000 slow.tw1 slow.tw2
+run             650000
